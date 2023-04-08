@@ -50,6 +50,10 @@ class PageRow {
   constructor(panels) {
     this.panels = panels;
   }
+
+  get totalWidth() {
+    return this.panels.reduce((sum, panel) => sum + panel.width, 0);
+  }
 }
 
 class Panel {
@@ -95,14 +99,28 @@ export function parseTemplate(tmpl) {
 
 export function pageToFrames(page, pageSizeWH) {
   const [wPx, hPx] = pageSizeWH;
-  const frames = page.rows.flatMap(row => row.panels.map(panel => {
-    return [
-      [wPx * .1, hPx * .1],
-      [wPx * .1, hPx * .9],
-      [wPx * .9, hPx * .9],
-      [wPx * .9, hPx * .1],
-    ];
-  }));
+  const outerMarginPx = page.outerMargin * wPx;
+  const innerMarginPx = page.innerMargin * wPx;
+  const offsetXPx = outerMarginPx;
+  const panelHeight = (hPx - (2 * outerMarginPx) - ((page.rows.length - 1) * innerMarginPx)) / page.rows.length;
+  const frames = page.rows.flatMap((row, i) => {
+    const offsetYPx = outerMarginPx + (i * (panelHeight + innerMarginPx));
+    const availablePanelWidth = wPx - (2 * outerMarginPx) - ((row.panels.length - 1) * innerMarginPx);
+    let rowOffsetXPx = offsetXPx;
+    const rowFrames = row.panels.map(panel => {
+      const panelPt = (x, y) => [rowOffsetXPx + x, offsetYPx + y];
+      const panelWidth = availablePanelWidth / row.totalWidth * panel.width;
+      const frame = [
+        panelPt(0, 0),
+        panelPt(0, panelHeight),
+        panelPt(panelWidth, panelHeight),
+        panelPt(panelWidth, 0),
+      ];
+      rowOffsetXPx += panelWidth + innerMarginPx;
+      return frame;
+    });
+    return rowFrames;
+  });
   return frames;
 }
 

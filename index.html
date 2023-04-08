@@ -110,15 +110,17 @@
       });
 
       function renderPreview() {
+        console.log("preview!");
         const dpi = 30;
         const pageSizePx = [5.5 * dpi, 8.5 * dpi];
         const pagesAst = parseTemplate(templateEditor.value);
         const pageCanvases = pagesAst.map((page) => {
+          console.log(page);
           const pageFrames = pageToFrames(page, pageSizePx);
+          console.log(pageFrames);
           const cv = renderPageFrames(pageFrames, pageSizePx);
           return cv;
         });
-        console.log("preview!");
         previewPages.replaceChildren(...pageCanvases);
       }
 
