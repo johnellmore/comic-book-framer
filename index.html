@@ -64,6 +64,12 @@
         flex: 4 0 300px;
       }
 
+      #preview-pages canvas {
+        display: inline-block;
+        border: 3px red solid;
+        margin: 0.5em;
+      }
+
       .below {
         max-width: 800px;
         margin: 0 auto 1.5em;
@@ -82,14 +88,20 @@
       </div>
       <div class="preview">
         <h2>Preview</h2>
-        <div class="preview-pages"></div>
+        <div id="preview-pages"></div>
       </div>
     </div>
     <script type="module">
-      import { generateRandomBook } from "./lib.mjs";
+      import {
+        generateRandomBook,
+        parseTemplate,
+        pageToFrames,
+        renderPageFrames,
+      } from "./lib.mjs";
 
       const generateBtn = document.getElementById("action-generate");
       const templateEditor = document.getElementById("template-editor");
+      const previewPages = document.getElementById("preview-pages");
 
       generateBtn.addEventListener("click", () => {
         const bookTemplate = generateRandomBook(10);
@@ -98,7 +110,18 @@
       });
 
       function renderPreview() {
+        const dpi = 30;
+        const pageSizePx = [5.5 * dpi, 8.5 * dpi];
+        const pagesAst = parseTemplate(templateEditor.value);
+        const pageCanvases = pagesAst.map((page) => {
+          const pageFrames = pageToFrames(page, pageSizePx);
+          const cv = renderPageFrames(pageFrames, pageSizePx);
+          return cv;
+        });
+        console.log(pageCanvases);
+        previewPages.replaceChildren(...pageCanvases);
         console.log("preview!");
+        console.log(pageAst);
       }
     </script>
   </body>
