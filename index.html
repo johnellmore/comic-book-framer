@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Comic Book Framer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <style>
+      html {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+          "Segoe UI Symbol";
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      body {
+        margin: 0;
+        background-color: white;
+      }
+
+      p {
+        margin: 1.5em 0;
+      }
+
+      .intro {
+        box-sizing: border-box;
+        max-width: 800px;
+        margin: 0 auto 1.5em;
+        padding: 1em;
+        border-bottom: 1px solid #999;
+      }
+
+      .interface {
+        display: flex;
+        flex-wrap: wrap;
+        max-width: 800px;
+        margin: auto;
+      }
+
+      .interface .controls {
+        box-sizing: border-box;
+        flex: 1 0 200px;
+        padding: 1em;
+      }
+
+      .interface .preview {
+        box-sizing: border-box;
+        flex: 1 0 400px;
+        padding: 1em;
+      }
+
+      .interface textarea {
+        box-sizing: border-box;
+        width: 100%;
+        height: 300px;
+        font-size: 1em;
+        font-family: monospace;
+        margin-right: 1em;
+        resize: vertical;
+      }
+
+      .interface .report {
+        flex: 4 0 300px;
+      }
+
+      .below {
+        max-width: 800px;
+        margin: 0 auto 1.5em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="intro">
+      <h1>Comic Book Framer</h1>
+      <p>Create a printable comic book template!</p>
+    </div>
+    <div class="interface">
+      <div class="controls">
+        <button id="action-generate">Generate random</button>
+        <textarea id="template-editor"></textarea>
+      </div>
+      <div class="preview">
+        <h2>Preview</h2>
+        <div class="preview-pages"></div>
+      </div>
+    </div>
+    <script type="module">
+      import { generateRandomBook } from "./lib.mjs";
+
+      const generateBtn = document.getElementById("action-generate");
+      const templateEditor = document.getElementById("template-editor");
+
+      generateBtn.addEventListener("click", () => {
+        const bookTemplate = generateRandomBook(10);
+        templateEditor.value = bookTemplate;
+        renderPreview();
+      });
+
+      function renderPreview() {
+        console.log("preview!");
+      }
+    </script>
+  </body>
+</html>
