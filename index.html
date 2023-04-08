@@ -118,11 +118,12 @@
           const cv = renderPageFrames(pageFrames, pageSizePx);
           return cv;
         });
-        console.log(pageCanvases);
-        previewPages.replaceChildren(...pageCanvases);
         console.log("preview!");
-        console.log(pageAst);
+        previewPages.replaceChildren(...pageCanvases);
       }
+
+      templateEditor.addEventListener("keyup", renderPreview);
+      renderPreview();
     </script>
   </body>
 </html>

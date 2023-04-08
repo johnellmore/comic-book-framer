@@ -95,14 +95,15 @@ export function parseTemplate(tmpl) {
 
 export function pageToFrames(page, pageSizeWH) {
   const [wPx, hPx] = pageSizeWH;
-  return [
-    [
+  const frames = page.rows.flatMap(row => row.panels.map(panel => {
+    return [
       [wPx * .1, hPx * .1],
       [wPx * .1, hPx * .9],
       [wPx * .9, hPx * .9],
       [wPx * .9, hPx * .1],
-    ]
-  ];
+    ];
+  }));
+  return frames;
 }
 
 export function renderPageFrames(polygons, pageSizeWH) {
