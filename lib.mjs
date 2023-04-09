@@ -1,12 +1,10 @@
 const STROKE_COLOR = 'black'; // CSS color
 const STROKE_WIDTH = 0.01; // percentage of page width
-const SEPARATORS = ['/', '|', '\\'];
+const SEPARATORS = ['/', '|', '\\', '>', '<'];
 
 export function generateRandomBook(numPages) {
-  const rowsPerPage = [2, 3];
   const pages = range(numPages).map(p => {
-    const numRows = pickRandom(rowsPerPage);
-    const rows = range(numRows).map(generateRandomPageRow);
+    const rows = range(3).map(generateRandomPageRow);
     return rows.join("\n");
   });
   return pages.join("\n\n");
@@ -67,6 +65,37 @@ class Panel {
   }
 }
 
+export class BookPrinterSingle {
+  constructor(widthInches, heightInches) {
+    this.widthInches = widthInches;
+    this.heightInches = heightInches;
+  }
+
+  renderPreview(ast) {
+    return this.#renderAtDpi(ast, 30);
+  }
+
+  renderPrintable(ast) {
+    const dpi = 300;
+    const blank = () => makeCanvas(...this.#pagePxSize(dpi));
+    return [blank(), ...this.#renderAtDpi(ast, dpi), blank()];
+  }
+
+  #pagePxSize(dpi) {
+    return [this.widthInches * dpi, this.heightInches * dpi];
+  }
+
+  #renderAtDpi(ast, dpi) {
+    const pageCanvases = ast.map((page) => {
+      const pageFrames = pageToFrames(page, this.#pagePxSize(dpi));
+      const canvas = makeCanvas(...this.#pagePxSize(dpi))
+      renderPageFrames(canvas, pageFrames, this.#pagePxSize(dpi)[0]);
+      return canvas;
+    });
+    return pageCanvases;
+  }
+}
+
 export function parseTemplate(tmpl) {
   const PAGE_INNER_MARGIN = 0.05; // as percentage of page width
   const PAGE_OUTER_MARGIN = 0.1; // as percentage of page width
@@ -108,13 +137,13 @@ export function pageToFrames(page, pageSizeWH) {
     const availablePanelWidth = wPx - (2 * outerMarginPx) - ((row.panels.length - 1) * innerMarginPx);
     let rowOffsetXPx = offsetXPx;
     const rowFrames = row.panels.map(panel => {
-      const panelPt = (x, y) => [rowOffsetXPx + x, offsetYPx + y];
+      const [x, y] = [rowOffsetXPx, offsetYPx];
       const panelWidth = availablePanelWidth / row.totalWidth * panel.width;
+      const leftEdge = new Edger(x, y, y + panelHeight, innerMarginPx);
+      const rightEdge = new Edger(x + panelWidth, y, y + panelHeight, innerMarginPx);
       const frame = [
-        panelPt(0, 0),
-        panelPt(0, panelHeight),
-        panelPt(panelWidth, panelHeight),
-        panelPt(panelWidth, 0),
+        ...(leftEdge.for(panel.leftBorderType)),
+        ...(rightEdge.for(panel.rightBorderType).reverse()),
       ];
       rowOffsetXPx += panelWidth + innerMarginPx;
       return frame;
@@ -124,14 +153,77 @@ export function pageToFrames(page, pageSizeWH) {
   return frames;
 }
 
-export function renderPageFrames(polygons, pageSizeWH) {
-  const [wPx, hPx] = pageSizeWH;
+class Edger {
+  constructor(x, yMin, yMax, gutter) {
+    this.x = x;
+    this.yMin = yMin;
+    this.yMax = yMax;
+    this.gutter = gutter;
+  }
 
+  for(char) {
+    if (char === '|') {
+      return this.straight();
+    } else if (char === '/') {
+      return this.forwardDiag();
+    } else if (char === '\\') {
+      return this.backwardDiag();
+    } else if (char === '>') {
+      return this.rightAngle();
+    } else if (char === '<') {
+      return this.leftAngle();
+    }
+    throw new Error('Invalid separator type');
+  }
+
+  straight() {
+    return [
+      [this.x, this.yMin],
+      [this.x, this.yMax],
+    ];
+  }
+
+  forwardDiag() {
+    return [
+      [this.x + this.gutter, this.yMin],
+      [this.x - this.gutter, this.yMax],
+    ];
+  }
+
+  backwardDiag() {
+    return [
+      [this.x - this.gutter, this.yMin],
+      [this.x + this.gutter, this.yMax],
+    ];
+  }
+
+  rightAngle() {
+    return [
+      [this.x - this.gutter / 2, this.yMin],
+      [this.x + this.gutter / 2, (this.yMax - this.yMin) / 2 + this.yMin],
+      [this.x - this.gutter / 2, this.yMax],
+    ];
+  }
+
+  leftAngle() {
+    return [
+      [this.x + this.gutter / 2, this.yMin],
+      [this.x - this.gutter / 2, (this.yMax - this.yMin) / 2 + this.yMin],
+      [this.x + this.gutter / 2, this.yMax],
+    ];
+  }
+}
+
+function makeCanvas(w, h) {
   const cv = document.createElement('canvas');
-  cv.width = wPx;
-  cv.height = hPx;
-  const ctx = cv.getContext('2d');
-  ctx.strokeStyle = "#000000";
+  cv.width = w;
+  cv.height = h;
+  return cv;
+}
+
+export function renderPageFrames(canvas, polygons, wPx) {
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = STROKE_COLOR;
   ctx.lineWidth = STROKE_WIDTH * wPx;
   polygons.forEach(points => {
     ctx.beginPath();
@@ -141,6 +233,4 @@ export function renderPageFrames(polygons, pageSizeWH) {
     ctx.closePath();
     ctx.stroke();
   });
-
-  return cv;
 }

@@ -64,10 +64,19 @@
         flex: 4 0 300px;
       }
 
+      #preview-pages {
+        display: flex;
+        flex-wrap: wrap;
+        background-color: #eee;
+        margin: 1em -1em;
+        padding: 1em 0.5em;
+      }
+
       #preview-pages canvas {
-        display: inline-block;
-        border: 3px red solid;
+        width: calc(33.333% - 1em);
         margin: 0.5em;
+        display: inline-block;
+        background-color: white;
       }
 
       .below {
@@ -97,6 +106,7 @@
         parseTemplate,
         pageToFrames,
         renderPageFrames,
+        BookPrinterSingle,
       } from "./lib.mjs";
 
       const generateBtn = document.getElementById("action-generate");
@@ -110,18 +120,10 @@
       });
 
       function renderPreview() {
-        console.log("preview!");
-        const dpi = 30;
-        const pageSizePx = [5.5 * dpi, 8.5 * dpi];
+        const book = new BookPrinterSingle(8.5, 11);
         const pagesAst = parseTemplate(templateEditor.value);
-        const pageCanvases = pagesAst.map((page) => {
-          console.log(page);
-          const pageFrames = pageToFrames(page, pageSizePx);
-          console.log(pageFrames);
-          const cv = renderPageFrames(pageFrames, pageSizePx);
-          return cv;
-        });
-        previewPages.replaceChildren(...pageCanvases);
+        const canvases = book.renderPreview(pagesAst);
+        previewPages.replaceChildren(...canvases);
       }
 
       templateEditor.addEventListener("keyup", renderPreview);
