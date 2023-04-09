@@ -69,7 +69,7 @@
         flex-wrap: wrap;
         background-color: #eee;
         margin: 1em -1em;
-        padding: 1em 0.5em;
+        padding: 0.5em 0.5em;
       }
 
       #preview-pages canvas {
@@ -92,6 +92,10 @@
     </div>
     <div class="interface">
       <div class="controls">
+        <fieldset>
+          <legend>Page setup</legend>
+          <page-size id="page-size" />
+        </fieldset>
         <button id="action-generate">Generate random</button>
         <textarea id="template-editor"></textarea>
       </div>
@@ -108,15 +112,22 @@
         renderPageFrames,
         BookPrinterSingle,
       } from "./lib.mjs";
+      import { PageSize } from "./pageSizeComponent.mjs";
+
+      customElements.define("page-size", PageSize);
 
       const generateBtn = document.getElementById("action-generate");
       const templateEditor = document.getElementById("template-editor");
       const previewPages = document.getElementById("preview-pages");
+      const pageSize = document.getElementById("page-size");
 
       generateBtn.addEventListener("click", () => {
         const bookTemplate = generateRandomBook(10);
         templateEditor.value = bookTemplate;
         renderPreview();
+      });
+      pageSize.addEventListener("change", () => {
+        console.log([pageSize.width, pageSize.height]);
       });
 
       function renderPreview() {
