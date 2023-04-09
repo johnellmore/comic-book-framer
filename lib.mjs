@@ -96,6 +96,37 @@ export class BookPrinterSingle {
   }
 }
 
+export class BookPrinterBifold {
+  constructor(widthInches, heightInches) {
+    this.widthInches = widthInches;
+    this.heightInches = heightInches;
+  }
+
+  renderPreview(ast) {
+    return this.#renderAtDpi(ast, 30);
+  }
+
+  renderPrintable(ast) {
+    const dpi = 300;
+    const blank = () => makeCanvas(...this.#pagePxSize(dpi));
+    return [blank(), ...this.#renderAtDpi(ast, dpi), blank()];
+  }
+
+  #pagePxSize(dpi) {
+    return [this.widthInches * dpi, this.heightInches * dpi];
+  }
+
+  #renderAtDpi(ast, dpi) {
+    const pageCanvases = ast.map((page) => {
+      const pageFrames = pageToFrames(page, this.#pagePxSize(dpi));
+      const canvas = makeCanvas(...this.#pagePxSize(dpi))
+      renderPageFrames(canvas, pageFrames, this.#pagePxSize(dpi)[0]);
+      return canvas;
+    });
+    return pageCanvases;
+  }
+}
+
 export function parseTemplate(tmpl) {
   const PAGE_INNER_MARGIN = 0.05; // as percentage of page width
   const PAGE_OUTER_MARGIN = 0.1; // as percentage of page width

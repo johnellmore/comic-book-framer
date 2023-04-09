@@ -50,7 +50,7 @@
         padding: 1em;
       }
 
-      .interface textarea {
+      .controls textarea {
         box-sizing: border-box;
         width: 100%;
         height: 300px;
@@ -60,8 +60,14 @@
         resize: vertical;
       }
 
-      .interface .report {
-        flex: 4 0 300px;
+      .controls label {
+        display: block;
+        margin-bottom: 0.5em;
+      }
+
+      .controls label > span {
+        display: block;
+        font-weight: bold;
       }
 
       #preview-pages {
@@ -92,12 +98,22 @@
     </div>
     <div class="interface">
       <div class="controls">
-        <fieldset>
-          <legend>Page setup</legend>
-          <page-size id="page-size" />
-        </fieldset>
-        <button id="action-generate">Generate random</button>
-        <textarea id="template-editor"></textarea>
+        <label>
+          <span>Page size</span>
+          <page-size id="page-size"></page-size>
+        </label>
+        <label>
+          <span>Fold type</span>
+          <select id="fold-type">
+            <option value="bifold">Bifold booklet</option>
+            <option value="single">Full page (no fold)</option>
+          </select>
+        </label>
+        <label>
+          <span>Template</span>
+          <textarea id="template-editor"></textarea>
+          <button id="action-generate">Generate random</button>
+        </label>
       </div>
       <div class="preview">
         <h2>Preview</h2>
@@ -111,6 +127,7 @@
         pageToFrames,
         renderPageFrames,
         BookPrinterSingle,
+        BookPrinterBifold,
       } from "./lib.mjs";
       import { PageSize } from "./pageSizeComponent.mjs";
 
@@ -120,25 +137,43 @@
       const templateEditor = document.getElementById("template-editor");
       const previewPages = document.getElementById("preview-pages");
       const pageSize = document.getElementById("page-size");
+      const foldType = document.getElementById("fold-type");
 
-      generateBtn.addEventListener("click", () => {
-        const bookTemplate = generateRandomBook(10);
-        templateEditor.value = bookTemplate;
+      let [w, h] = [pageSize.width, pageSize.height];
+
+      generateBtn.addEventListener("click", () => generateRandom(6));
+      pageSize.addEventListener("change", () => {
+        [w, h] = [pageSize.width, pageSize.height];
+        console.log([w, h]);
         renderPreview();
       });
-      pageSize.addEventListener("change", () => {
-        console.log([pageSize.width, pageSize.height]);
-      });
+      foldType.addEventListener("change", () => renderPreview());
+
+      function generateRandom(num) {
+        const bookTemplate = generateRandomBook(num);
+        templateEditor.value = bookTemplate;
+        renderPreview();
+      }
 
       function renderPreview() {
-        const book = new BookPrinterSingle(8.5, 11);
+        const fold = foldType.value;
+        const book =
+          fold === "single"
+            ? new BookPrinterSingle(w, h)
+            : new BookPrinterBifold(w, h);
+        console.log(book.constructor);
         const pagesAst = parseTemplate(templateEditor.value);
         const canvases = book.renderPreview(pagesAst);
         previewPages.replaceChildren(...canvases);
       }
 
       templateEditor.addEventListener("keyup", renderPreview);
-      renderPreview();
+
+      if (templateEditor.value === "") {
+        generateRandom(2);
+      } else {
+        renderPreview();
+      }
     </script>
   </body>
 </html>

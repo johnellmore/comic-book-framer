@@ -40,6 +40,10 @@ export class PageSize extends HTMLElement {
     input {
       width: 4em;
     }
+
+    .invalid {
+      outline: 1px solid red;
+    }
     `;
 
     // attach the created elements to the shadow DOM
@@ -81,12 +85,14 @@ export class PageSize extends HTMLElement {
       this.width = unitStrToInches(this.widthInput.value);
       this.widthInput.classList.toggle('invalid', false);
     } catch (e) {
+      console.log(e);
       this.widthInput.classList.toggle('invalid', true);
     }
     try {
       this.height = unitStrToInches(this.heightInput.value);
       this.heightInput.classList.toggle('invalid', false);
     } catch (e) {
+      console.log(e);
       this.heightInput.classList.toggle('invalid', true);
     }
 
@@ -114,12 +120,15 @@ export class PageSize extends HTMLElement {
 }
 
 export function unitStrToInches(unitStr) {
-  const match = unitStr.match(/(\d*(\.\d+)?) *(\"|in|inches|mm|cm)/i);
+  const match = unitStr.match(/^\s*(\d*(\.\d+)?) *(\"|in|inches|mm|cm)\s*$/i);
   if (!match) {
     throw new Error('Cannot parse measurement string');
   }
   const [, num, , unit] = match;
   const val = Number(num);
+  if (val === 0) {
+    throw new Error('Cannot accept a zero-value measurement');
+  }
   const unitNormal = unit.toLowerCase();
   if (unitNormal === 'in' || unitNormal === '"' || unitNormal === 'inches') {
     return val;
