@@ -118,7 +118,6 @@
       <div class="preview">
         <div id="preview-pages"></div>
         <button id="action-print">Print</button>
-        <iframe id="pdf" style="width: 100%; height: 400px"></iframe>
       </div>
     </div>
     <script src="./pdf-lib.min.js"></script>
@@ -148,9 +147,9 @@
         console.log([w, h]);
         renderPreview();
       });
-      foldType.addEventListener("change", () => renderPreview());
+      foldType.addEventListener("change", renderPreview);
       templateEditor.addEventListener("keyup", renderPreview);
-      printBtn.addEventListener("click", () => print());
+      printBtn.addEventListener("click", print);
 
       function generateRandom(num) {
         const bookTemplate = generateRandomBook(num);
@@ -174,7 +173,7 @@
         const pagesAst = parseTemplate(templateEditor.value);
         const pdfDoc = await book.renderPrintable(pagesAst);
         const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
-        document.getElementById("pdf").src = pdfDataUri;
+        window.open(pdfDataUri, "printable");
       }
 
       if (templateEditor.value === "") {
