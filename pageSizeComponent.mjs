@@ -10,7 +10,7 @@ export class PageSize extends HTMLElement {
 
     this.attachShadow({ mode: "open" });
 
-    // Create (nested) span elements
+    // the preset selector (e.g. "US Letter")
     this.selector = document.createElement('select');
     const custOpt = document.createElement('option');
     custOpt.label = 'Custom';
@@ -22,38 +22,24 @@ export class PageSize extends HTMLElement {
       this.selector.appendChild(opt);
     }
 
-    // const widthLabel = document.createElement('label');
-    // widthLabel.appendChild(document.createTextNode('Width: '));
+    // width and height text boxes
     this.widthInput = document.createElement('input');
     this.widthInput.type = 'text';
-    // widthLabel.appendChild(this.widthInput);
-
-    // const heightLabel = document.createElement('label');
-    // heightLabel.appendChild(document.createTextNode('Height: '));
     this.heightInput = document.createElement('input');
     this.heightInput.type = 'text';
-    // heightLabel.appendChild(this.heightInput);
 
-    // Create some CSS to apply to the shadow DOM
     const style = document.createElement("style");
     style.textContent = `
-    input {
-      width: 4em;
-    }
-
-    .invalid {
-      outline: 1px solid red;
-    }
+    input { width: 4em; }
+    .invalid { outline: 1px solid red; }
     `;
 
-    // attach the created elements to the shadow DOM
     this.shadowRoot.append(
       style,
       this.selector,
-      // document.createElement('br'),
-      document.createTextNode(' '),
+      document.createTextNode(' '), // small space
       this.widthInput,
-      document.createTextNode(' ✗ '),
+      document.createTextNode(' ✗ '), // &times; symbol
       this.heightInput);
     this.#setPreset('US Letter');
     this.#onChange();

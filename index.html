@@ -116,18 +116,18 @@
         </label>
       </div>
       <div class="preview">
-        <h2>Preview</h2>
         <div id="preview-pages"></div>
+        <button id="action-print">Print</button>
+        <iframe id="pdf" style="width: 100%; height: 400px"></iframe>
       </div>
     </div>
+    <script src="./pdf-lib.min.js"></script>
     <script type="module">
       import {
         generateRandomBook,
         parseTemplate,
         pageToFrames,
-        renderPageFrames,
         BookPrinterSingle,
-        BookPrinterBifold,
       } from "./lib.mjs";
       import { PageSize } from "./pageSizeComponent.mjs";
 
@@ -138,6 +138,7 @@
       const previewPages = document.getElementById("preview-pages");
       const pageSize = document.getElementById("page-size");
       const foldType = document.getElementById("fold-type");
+      const printBtn = document.getElementById("action-print");
 
       let [w, h] = [pageSize.width, pageSize.height];
 
@@ -148,6 +149,8 @@
         renderPreview();
       });
       foldType.addEventListener("change", () => renderPreview());
+      templateEditor.addEventListener("keyup", renderPreview);
+      printBtn.addEventListener("click", () => print());
 
       function generateRandom(num) {
         const bookTemplate = generateRandomBook(num);
@@ -158,16 +161,21 @@
       function renderPreview() {
         const fold = foldType.value;
         const book =
-          fold === "single"
-            ? new BookPrinterSingle(w, h)
-            : new BookPrinterBifold(w, h);
-        console.log(book.constructor);
+          // fold === "single"
+          new BookPrinterSingle(w, h);
+        // : new BookPrinterBifold(w, h);
         const pagesAst = parseTemplate(templateEditor.value);
         const canvases = book.renderPreview(pagesAst);
         previewPages.replaceChildren(...canvases);
       }
 
-      templateEditor.addEventListener("keyup", renderPreview);
+      async function print() {
+        const book = new BookPrinterSingle(w, h);
+        const pagesAst = parseTemplate(templateEditor.value);
+        const pdfDoc = await book.renderPrintable(pagesAst);
+        const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
+        document.getElementById("pdf").src = pdfDataUri;
+      }
 
       if (templateEditor.value === "") {
         generateRandom(2);

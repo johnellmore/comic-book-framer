@@ -1,5 +1,7 @@
+const PAGE_INNER_MARGIN = 0.03; // as percentage of page width
+const PAGE_OUTER_MARGIN = 0.08; // as percentage of page width
 const STROKE_COLOR = 'black'; // CSS color
-const STROKE_WIDTH = 0.01; // percentage of page width
+const STROKE_WIDTH = 0.005; // percentage of page width
 const SEPARATORS = ['/', '|', '\\', '>', '<'];
 
 export function generateRandomBook(numPages) {
@@ -72,64 +74,31 @@ export class BookPrinterSingle {
   }
 
   renderPreview(ast) {
-    return this.#renderAtDpi(ast, 30);
+    const dpi = 30;
+    return ast.map((page) => {
+      const pageFrames = pageToFrames(page, this.#pagePxSize(dpi));
+      const canvas = makeCanvas(...this.#pagePxSize(dpi))
+      renderFramesToCanvas(canvas, pageFrames, this.#pagePxSize(dpi)[0]);
+      return canvas;
+    });
   }
 
-  renderPrintable(ast) {
-    const dpi = 300;
-    const blank = () => makeCanvas(...this.#pagePxSize(dpi));
-    return [blank(), ...this.#renderAtDpi(ast, dpi), blank()];
+  async renderPrintable(ast) {
+    const doc = await PDFLib.PDFDocument.create();
+    ast.forEach((page) => {
+      const docPage = doc.addPage(this.#pagePxSize(72));
+      const pageFrames = pageToFrames(page, this.#pagePxSize(72));
+      renderFramesToPdf(docPage, pageFrames, this.widthInches);
+    });
+    return doc;
   }
 
   #pagePxSize(dpi) {
     return [this.widthInches * dpi, this.heightInches * dpi];
-  }
-
-  #renderAtDpi(ast, dpi) {
-    const pageCanvases = ast.map((page) => {
-      const pageFrames = pageToFrames(page, this.#pagePxSize(dpi));
-      const canvas = makeCanvas(...this.#pagePxSize(dpi))
-      renderPageFrames(canvas, pageFrames, this.#pagePxSize(dpi)[0]);
-      return canvas;
-    });
-    return pageCanvases;
-  }
-}
-
-export class BookPrinterBifold {
-  constructor(widthInches, heightInches) {
-    this.widthInches = widthInches;
-    this.heightInches = heightInches;
-  }
-
-  renderPreview(ast) {
-    return this.#renderAtDpi(ast, 30);
-  }
-
-  renderPrintable(ast) {
-    const dpi = 300;
-    const blank = () => makeCanvas(...this.#pagePxSize(dpi));
-    return [blank(), ...this.#renderAtDpi(ast, dpi), blank()];
-  }
-
-  #pagePxSize(dpi) {
-    return [this.widthInches * dpi, this.heightInches * dpi];
-  }
-
-  #renderAtDpi(ast, dpi) {
-    const pageCanvases = ast.map((page) => {
-      const pageFrames = pageToFrames(page, this.#pagePxSize(dpi));
-      const canvas = makeCanvas(...this.#pagePxSize(dpi))
-      renderPageFrames(canvas, pageFrames, this.#pagePxSize(dpi)[0]);
-      return canvas;
-    });
-    return pageCanvases;
   }
 }
 
 export function parseTemplate(tmpl) {
-  const PAGE_INNER_MARGIN = 0.05; // as percentage of page width
-  const PAGE_OUTER_MARGIN = 0.1; // as percentage of page width
   return tmpl.split("\n\n").map(
     pageTmpl => new Page(pageTmpl.split("\n").map(
       rowTmpl => {
@@ -252,7 +221,7 @@ function makeCanvas(w, h) {
   return cv;
 }
 
-export function renderPageFrames(canvas, polygons, wPx) {
+export function renderFramesToCanvas(canvas, polygons, wPx) {
   const ctx = canvas.getContext('2d');
   ctx.strokeStyle = STROKE_COLOR;
   ctx.lineWidth = STROKE_WIDTH * wPx;
@@ -263,5 +232,21 @@ export function renderPageFrames(canvas, polygons, wPx) {
     points.forEach(p => ctx.lineTo(...p));
     ctx.closePath();
     ctx.stroke();
+  });
+}
+
+export function renderFramesToPdf(page, polygons, wIn) {
+  let svgCommands = [];
+  polygons.forEach(points => {
+    const start = points.shift();
+    svgCommands.push(`M ${start[0]},${start[1]}`);
+    points.forEach(p => svgCommands.push(`L ${p[0]},${p[1]}`));
+    svgCommands.push(`Z`);
+  });
+  const svgPath = svgCommands.join(' ');
+  page.drawSvgPath(svgPath, {
+    x: 0,
+    y: page.getSize().height,
+    borderWidth: STROKE_WIDTH * (wIn * 72),
   });
 }
